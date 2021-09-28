@@ -6,7 +6,7 @@ ENV GO111MODULE="on"
 
 WORKDIR /code
 
-RUN make
+RUN go build -o blackbox_exporter main.go
 
 FROM registry.cn-beijing.aliyuncs.com/g7-base/base-centos7:v0.2 as runner
 WORKDIR /go/bin
