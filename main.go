@@ -236,7 +236,8 @@ func run() int {
 		}
 	}
 
-	if sc.C == nil {
+	if len(sc.C.Modules) == 0 {
+		level.Info(logger).Log("msg", "load module from file", "file", *configFile)
 		if err := sc.ReloadConfig(*configFile, logger); err != nil {
 			level.Error(logger).Log("msg", "Error loading config", "err", err)
 			return 1
