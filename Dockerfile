@@ -13,5 +13,5 @@ WORKDIR /go/bin
 COPY --from=build /code/blackbox_exporter /go/bin/
 COPY --from=build /code/blackbox.yml /etc/blackbox_exporter/config.yml
 EXPOSE      9115
-ENTRYPOINT  [ "/bin/blackbox_exporter" ]
+ENTRYPOINT  [ "/go/bin/blackbox_exporter" ]
 CMD         [ "--config.file=/etc/blackbox_exporter/config.yml" ]
