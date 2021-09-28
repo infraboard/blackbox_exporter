@@ -224,9 +224,22 @@ func run() int {
 	level.Info(logger).Log("msg", "Starting blackbox_exporter", "version", version.Info())
 	level.Info(logger).Log("build_context", version.BuildContext())
 
-	if err := sc.ReloadConfig(*configFile, logger); err != nil {
-		level.Error(logger).Log("msg", "Error loading config", "err", err)
-		return 1
+	// 优先远程加载
+	remoteURL := os.Getenv("HTTP_REMOTE_CONFIG")
+	if remoteURL != "" {
+		level.Info(logger).Log("msg", "find http remote config, try load config from http")
+		if err := sc.LoadConfigFromHttp(remoteURL, logger); err != nil {
+			level.Warn(logger).Log("msg", "Load http remote config error, retry other config", "url", remoteURL)
+		} else {
+			level.Info(logger).Log("msg", "load config from http success")
+		}
+	}
+
+	if sc.C == nil {
+		if err := sc.ReloadConfig(*configFile, logger); err != nil {
+			level.Error(logger).Log("msg", "Error loading config", "err", err)
+			return 1
+		}
 	}
 
 	if *configCheck {
@@ -265,12 +278,34 @@ func run() int {
 		for {
 			select {
 			case <-hup:
+				// 优先远程加载
+				remoteURL := os.Getenv("HTTP_REMOTE_CONFIG")
+				if remoteURL != "" {
+					level.Info(logger).Log("msg", "find http remote config, try load config from http")
+					if err := sc.LoadConfigFromHttp(remoteURL, logger); err != nil {
+						level.Warn(logger).Log("msg", "Load http remote config error, retry other config", "url", remoteURL)
+					} else {
+						level.Info(logger).Log("msg", "load config from http success")
+					}
+				}
+
 				if err := sc.ReloadConfig(*configFile, logger); err != nil {
 					level.Error(logger).Log("msg", "Error reloading config", "err", err)
 					continue
 				}
 				level.Info(logger).Log("msg", "Reloaded config file")
 			case rc := <-reloadCh:
+				// 优先远程加载
+				remoteURL := os.Getenv("HTTP_REMOTE_CONFIG")
+				if remoteURL != "" {
+					level.Info(logger).Log("msg", "find http remote config, try load config from http")
+					if err := sc.LoadConfigFromHttp(remoteURL, logger); err != nil {
+						level.Warn(logger).Log("msg", "Load http remote config error, retry other config", "url", remoteURL)
+					} else {
+						level.Info(logger).Log("msg", "load config from http success")
+					}
+				}
+
 				if err := sc.ReloadConfig(*configFile, logger); err != nil {
 					level.Error(logger).Log("msg", "Error reloading config", "err", err)
 					rc <- err

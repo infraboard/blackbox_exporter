@@ -14,9 +14,12 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
+	"net/http"
 	"os"
 	"regexp"
 	"runtime"
@@ -113,6 +116,51 @@ func (sc *SafeConfig) ReloadConfig(confFile string, logger log.Logger) (err erro
 
 	if err = decoder.Decode(c); err != nil {
 		return fmt.Errorf("error parsing config file: %s", err)
+	}
+
+	for name, module := range c.Modules {
+		if module.HTTP.NoFollowRedirects != nil {
+			// Hide the old flag from the /config page.
+			module.HTTP.NoFollowRedirects = nil
+			c.Modules[name] = module
+			if logger != nil {
+				level.Warn(logger).Log("msg", "no_follow_redirects is deprecated and will be removed in the next release. It is replaced by follow_redirects.", "module", name)
+			}
+		}
+	}
+
+	sc.Lock()
+	sc.C = c
+	sc.Unlock()
+
+	return nil
+}
+
+func (sc *SafeConfig) LoadConfigFromHttp(url string, logger log.Logger) (err error) {
+	var c = &Config{}
+	defer func() {
+		if err != nil {
+			configReloadSuccess.Set(0)
+		} else {
+			configReloadSuccess.Set(1)
+			configReloadSeconds.SetToCurrentTime()
+		}
+	}()
+
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return fmt.Errorf("error reading config from http [%s] error, %s", url, err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error reading config from http [%s] body error, %s", url, err)
+	}
+
+	if err := json.Unmarshal(body, c); err != nil {
+		return fmt.Errorf("error parsing json http config : %s", err)
 	}
 
 	for name, module := range c.Modules {
