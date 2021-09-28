@@ -58,6 +58,8 @@ After a successful local build:
 
 ## [Configuration](CONFIGURATION.md)
 
+指定环境变量: HTTP_REMOTE_CONFIG, 可以远程加载配置
+
 Blackbox exporter is configured via a [configuration file](CONFIGURATION.md) and command-line flags (such as what configuration file to load, what port to listen on, and the logging format and level).
 
 Blackbox exporter can reload its configuration file at runtime. If the new configuration is not well-formed, the changes will not be applied.
