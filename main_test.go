@@ -26,6 +26,7 @@ import (
 	pconfig "github.com/prometheus/common/config"
 
 	"github.com/prometheus/blackbox_exporter/config"
+	"github.com/prometheus/blackbox_exporter/history"
 )
 
 var c = &config.Config{
@@ -56,7 +57,7 @@ func TestPrometheusTimeoutHTTP(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		probeHandler(w, r, c, log.NewNopLogger(), &resultHistory{})
+		probeHandler(w, r, c, log.NewNopLogger(), &history.ResultHistory{})
 	})
 
 	handler.ServeHTTP(rr, req)
@@ -78,7 +79,7 @@ func TestPrometheusConfigSecretsHidden(t *testing.T) {
 	}
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		probeHandler(w, r, c, log.NewNopLogger(), &resultHistory{})
+		probeHandler(w, r, c, log.NewNopLogger(), &history.ResultHistory{})
 	})
 	handler.ServeHTTP(rr, req)
 

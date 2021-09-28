@@ -45,6 +45,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/prometheus/blackbox_exporter/config"
+	"github.com/prometheus/blackbox_exporter/history"
 	"github.com/prometheus/blackbox_exporter/prober"
 )
 
@@ -75,7 +76,7 @@ var (
 	})
 )
 
-func probeHandler(w http.ResponseWriter, r *http.Request, c *config.Config, logger log.Logger, rh *resultHistory) {
+func probeHandler(w http.ResponseWriter, r *http.Request, c *config.Config, logger log.Logger, rh *history.ResultHistory) {
 	moduleName := r.URL.Query().Get("module")
 	if moduleName == "" {
 		moduleName = "http_2xx"
@@ -219,7 +220,7 @@ func run() int {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
-	rh := &resultHistory{maxResults: *historyLimit}
+	rh := &history.ResultHistory{MaxResults: *historyLimit}
 
 	level.Info(logger).Log("msg", "Starting blackbox_exporter", "version", version.Info())
 	level.Info(logger).Log("build_context", version.BuildContext())
@@ -372,11 +373,11 @@ func run() int {
 		for i := len(results) - 1; i >= 0; i-- {
 			r := results[i]
 			success := "Success"
-			if !r.success {
+			if !r.Success {
 				success = "<strong>Failure</strong>"
 			}
 			fmt.Fprintf(w, "<tr><td>%s</td><td>%s</td><td>%s</td><td><a href='logs?id=%d'>Logs</a></td></td>",
-				html.EscapeString(r.moduleName), html.EscapeString(r.target), success, r.id)
+				html.EscapeString(r.ModuleName), html.EscapeString(r.Target), success, r.Id)
 		}
 
 		w.Write([]byte(`</table></body>
@@ -395,7 +396,7 @@ func run() int {
 			return
 		}
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(result.debugOutput))
+		w.Write([]byte(result.DebugOutput))
 	})
 
 	http.HandleFunc(path.Join(*routePrefix, "/config"), func(w http.ResponseWriter, r *http.Request) {
